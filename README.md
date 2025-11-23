@@ -70,3 +70,102 @@ O projeto utiliza Docker Compose para subir todo o ambiente com um único comand
 └── modulo_4_estoque/       # Serviço de Estoque (Consumer)
     ├── app.py              # Aplicação Flask + Thread Consumer
     └── Dockerfile
+```
+---
+
+## Modelagem Arquitetura
+
+```mermaid
+graph TD
+    %% Estilos (Cores)
+    classDef frontend fill:#e1f5fe,stroke:#01579b,stroke-width:2px,color:#000;
+    classDef backend fill:#fff3e0,stroke:#e65100,stroke-width:2px,color:#000;
+    classDef broker fill:#f3e5f5,stroke:#4a148c,stroke-width:2px,stroke-dasharray: 5 5,color:#000;
+    classDef database fill:#e8f5e9,stroke:#1b5e20,stroke-width:1px,color:#000;
+
+    %% Atores
+    Client(👤 Cliente / Navegador)
+
+    %% Módulo 1: Frontend
+    subgraph Mod1 [Módulo 1: Frontend]
+        UI["🖥️ Interface Web"]
+    end
+
+    %% Módulo 2: Backend Pedidos
+    subgraph Mod2 [Módulo 2: Caixa]
+        API_Pedidos["⚙️ API de Pedidos<br/>(Flask)"]
+        DB_Pedidos[("🛢️ DB Pedidos")]
+    end
+
+    %% Broker
+    Rabbit{"🐰 RabbitMQ<br/>Fila: Pedidos"}
+
+    %% Módulo 3: Cozinha
+    subgraph Mod3 [Módulo 3: Cozinha]
+        Worker_Cozinha["⚙️ Worker Cozinha"]
+        Display_Cozinha["🖥️ Tela do Chapeiro"]
+    end
+
+    %% Módulo 4: Estoque
+    subgraph Mod4 [Módulo 4: Estoque]
+        Worker_Estoque["⚙️ Worker Estoque"]
+        DB_Estoque[("🛢️ DB Estoque")]
+    end
+
+    %% Relacionamentos
+    Client -->|1. Acessa| UI
+    UI -->|2. POST /pedidos| API_Pedidos
+    API_Pedidos -->|3. Salva| DB_Pedidos
+    API_Pedidos -.->|4. Publica Evento| Rabbit
+
+    Rabbit -.->|5. Consome msg| Worker_Cozinha
+    Rabbit -.->|5. Consome msg| Worker_Estoque
+
+    Worker_Cozinha -->|Atualiza| Display_Cozinha
+    Worker_Estoque -->|Baixa Insumo| DB_Estoque
+
+    %% Aplicando Estilos
+    class UI frontend;
+    class API_Pedidos,Worker_Cozinha,Worker_Estoque,Display_Cozinha backend;
+    class Rabbit broker;
+    class DB_Pedidos,DB_Estoque database;
+```
+
+---
+
+## Diagrama de Sequência
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as Cliente
+    participant Front as Frontend
+    participant API as API Pedidos (Caixa)
+    participant Broker as RabbitMQ
+    participant Kitchen as Cozinha (KDS)
+    participant Inventory as Estoque
+
+    User->>Front: Clica em "Finalizar Pedido"
+    Front->>API: POST /pedidos (JSON)
+    
+    activate API
+    Note right of API: Valida pedido e salva no DB
+    API->>Broker: Publica "PedidoConfirmado"
+    API-->>Front: Retorna HTTP 201 (Sucesso)
+    deactivate API
+    
+    Front-->>User: Mostra "Pedido realizado!"
+    
+    par Processamento Assíncrono
+        Broker->>Kitchen: Entrega Mensagem (Consumo)
+        activate Kitchen
+        Kitchen->>Kitchen: Atualiza Tela do Chapeiro
+        deactivate Kitchen
+    and
+        Broker->>Inventory: Entrega Mensagem (Consumo)
+        activate Inventory
+        Inventory->>Inventory: Baixa Ingredientes no DB
+        deactivate Inventory
+    end
+
+```
