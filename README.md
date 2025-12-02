@@ -169,3 +169,45 @@ sequenceDiagram
     end
 
 ```
+
+## 🚀 Como Rodar o Projeto
+
+Siga as instruções abaixo para executar o protótipo em sua máquina local. O projeto é totalmente containerizado, exigindo apenas o Docker instalado.
+
+### 📋 Pré-requisitos
+
+* **Docker** e **Docker Compose** instalados.
+* **Git** instalado.
+
+### 🔧 Passo a Passo
+
+1.  **Clone o repositório:**
+    ```bash
+    git clone [https://github.com/brunosouzx/Sistemas_Distribuidos_UFRPE.git](https://github.com/brunosouzx/Sistemas_Distribuidos_UFRPE.git)
+    cd Sistemas_Distribuidos_UFRPE
+    ```
+
+2.  **Suba o ambiente (Build & Run):**
+    Execute o comando abaixo na raiz do projeto para construir as imagens e iniciar os containers:
+    ```bash
+    docker-compose up --build
+    ```
+    > **Dica:** Mantenha este terminal aberto para visualizar os logs de comunicação entre os sistemas (Caixa, Cozinha e Estoque).
+
+3.  **Acesse as Interfaces:**
+
+    | Módulo | URL / Acesso | Descrição |
+    | :--- | :--- | :--- |
+    | **Swagger (API Caixa)** | [http://localhost:5000/apidocs](http://localhost:5000/apidocs) | Interface para realizar pedidos via HTTP. |
+    | **RabbitMQ Manager** | [http://localhost:15672](http://localhost:15672) | **User:** `guest` / **Pass:** `guest`. Para monitorar filas. |
+  
+
+---
+
+
+## 🛑 Como Parar
+
+Para parar a execução e remover os containers, pressione `Ctrl+C` no terminal ou rode:
+
+```bash
+docker-compose down
