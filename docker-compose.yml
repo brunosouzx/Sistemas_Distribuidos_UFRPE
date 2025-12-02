@@ -1,0 +1,47 @@
+version: '3'
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672" 
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  caixa:
+    build:
+      context: .
+      dockerfile: caixa/Dockerfile
+    command: python app.py
+    volumes:
+      - ./caixa:/app
+    ports:
+      - "5000:5000"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  cozinha:
+    build:
+      context: .
+      dockerfile: cozinha/Dockerfile
+    command: python -u app.py 
+    volumes:
+      - ./cozinha:/app
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  estoque:
+    build:
+      context: .
+      dockerfile: estoque/Dockerfile
+    command: python -u app.py
+    volumes:
+      - ./estoque:/app
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
