@@ -1,0 +1,24 @@
+# Arquivos Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Bancos de dados
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# Git
+.git/
+.gitignore
+
+# IDEs
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Documentação
+README.md

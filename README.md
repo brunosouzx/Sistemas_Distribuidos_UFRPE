@@ -44,8 +44,10 @@ O sistema foi dividido em **4 módulos independentes** que simulam os setores re
 
 * **Linguagem:** Python 3.9+
 * **Framework Web:** Flask
+* **Banco de Dados:** SQLite3 (persistência de dados)
 * **Message Broker:** RabbitMQ (Imagem Oficial Management)
 * **Cliente AMQP:** Pika (Biblioteca Python para RabbitMQ)
+* **Documentação API:** Flasgger (Swagger)
 * **Orquestração:** Docker & Docker Compose
 
 ---
@@ -57,18 +59,24 @@ O projeto utiliza Docker Compose para subir todo o ambiente com um único comand
 ```text
 /
 ├── docker-compose.yml      # Orquestração de todos os contêineres
-├── modulo_1_cliente/       # Frontend do Cliente
-│   ├── index.html
-│   └── script.js
-├── modulo_2_pedidos/       # API de Pedidos (Producer)
-│   ├── app.py              # Aplicação Flask
+├── requirements.txt        # Dependências Python
+├── test_sistema.py         # Script de teste automatizado
+├── caixa/                  # Serviço de Pedidos (Gateway)
+│   ├── app.py              # API REST para pedidos
+│   ├── database.py         # Camada de banco de dados
+│   ├── caixa.db            # SQLite (gerado em runtime)
 │   └── Dockerfile
-├── modulo_3_cozinha/       # Serviço da Cozinha (Consumer + UI)
-│   ├── app.py              # Aplicação Flask + Thread Consumer
-│   ├── templates/          # Interface do Cozinheiro
+├── cozinha/                # Serviço da Cozinha
+│   ├── app.py              # Consumer RabbitMQ (processamento)
+│   ├── api.py              # API REST para consultas
+│   ├── database.py         # Camada de banco de dados
+│   ├── cozinha.db          # SQLite (gerado em runtime)
 │   └── Dockerfile
-└── modulo_4_estoque/       # Serviço de Estoque (Consumer)
-    ├── app.py              # Aplicação Flask + Thread Consumer
+└── estoque/                # Serviço de Estoque
+    ├── app.py              # Consumer RabbitMQ (baixa de ingredientes)
+    ├── api.py              # API REST para consultas
+    ├── database.py         # Camada de banco de dados
+    ├── estoque.db          # SQLite (gerado em runtime)
     └── Dockerfile
 ```
 ---
@@ -196,11 +204,72 @@ Siga as instruções abaixo para executar o protótipo em sua máquina local. O 
 
 3.  **Acesse as Interfaces:**
 
-    | Módulo | URL / Acesso | Descrição |
+    | Módulo | URL | Descrição |
     | :--- | :--- | :--- |
-    | **Swagger (API Caixa)** | [http://localhost:5000/apidocs](http://localhost:5000/apidocs) | Interface para realizar pedidos via HTTP. |
+    | **Swagger Caixa** | [http://localhost:5000/apidocs](http://localhost:5000/apidocs) | Interface para realizar pedidos via HTTP. |
+    | **Swagger Cozinha API** | [http://localhost:5001/apidocs](http://localhost:5001/apidocs) | Interface para consultar fila e estatísticas da cozinha. |
+    | **Swagger Estoque API** | [http://localhost:5002/apidocs](http://localhost:5002/apidocs) | Interface para consultar e gerenciar estoque. |
     | **RabbitMQ Manager** | [http://localhost:15672](http://localhost:15672) | **User:** `guest` / **Pass:** `guest`. Para monitorar filas. |
-  
+
+4.  **Teste o sistema:**
+    Execute o script de teste automatizado para validar todas as funcionalidades:
+    ```bash
+    python test_sistema.py
+    ```
+
+---
+
+## 📊 Funcionalidades Implementadas
+
+### ✅ Persistência com SQLite
+
+Substituição completa do JSON por bancos de dados SQLite com schema estruturado:
+
+#### **Caixa (caixa.db)**
+- Tabela `pedidos`: Registra todos os pedidos com status, valor e timestamps
+- Tabela `cardapio`: Catalogo de produtos disponíveis com preços
+- Validações de integridade e consultas otimizadas
+
+#### **Cozinha (cozinha.db)**
+- Tabela `pedidos_cozinha`: Rastreamento de pedidos em preparação
+- Controle de tempo de preparo e status (RECEBIDO → PREPARANDO → PRONTO)
+- Estatísticas de performance da cozinha
+
+#### **Estoque (estoque.db)**
+- Tabela `ingredientes`: Controle de quantidade com alertas de estoque baixo
+- Tabela `receitas`: Relacionamento ingredientes × produtos
+- Tabela `movimentacoes`: Histórico completo de entradas/saídas
+- Validação de disponibilidade antes de aceitar pedidos
+
+### 🔍 APIs REST para Consulta
+
+Cada serviço possui endpoints para consulta e monitoramento:
+
+**Caixa (porta 5000):**
+- `GET /pedidos` - Lista pedidos (com filtro por status)
+- `GET /pedidos/{id}` - Busca pedido específico
+- `GET /cardapio` - Lista itens disponíveis
+- `POST /pedidos` - Cria novo pedido
+
+**Cozinha API (porta 5001):**
+- `GET /fila` - Visualiza fila de preparação
+- `GET /pedidos/{status}` - Filtra por status (RECEBIDO, PREPARANDO, PRONTO)
+- `GET /estatisticas` - Estatísticas de performance
+
+**Estoque API (porta 5002):**
+- `GET /estoque` - Lista todos os ingredientes com status
+- `GET /estoque/{ingrediente}` - Consulta ingrediente específico
+- `POST /estoque/{ingrediente}/adicionar` - Repõe estoque
+- `GET /estoque/historico` - Histórico de movimentações
+- `GET /estoque/verificar/{produto}` - Verifica disponibilidade
+
+### 🎯 Melhorias de Arquitetura
+
+- **Separação de responsabilidades**: Database layer isolada em módulos dedicados
+- **Context managers**: Gestão automática de conexões com SQLite
+- **Transações atômicas**: Rollback automático em caso de erro
+- **Índices de performance**: Consultas otimizadas por status
+- **Documentação Swagger**: Todas as APIs documentadas interativamente
 
 ---
 

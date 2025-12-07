@@ -35,6 +35,18 @@ services:
       rabbitmq:
         condition: service_healthy
 
+  cozinha_api:
+    build:
+      context: .
+      dockerfile: cozinha/Dockerfile
+    command: python -u api.py
+    volumes:
+      - ./cozinha:/app
+    ports:
+      - "5001:5001"
+    depends_on:
+      - cozinha
+
   estoque:
     build:
       context: .
@@ -45,3 +57,15 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
+
+  estoque_api:
+    build:
+      context: .
+      dockerfile: estoque/Dockerfile
+    command: python -u api.py
+    volumes:
+      - ./estoque:/app
+    ports:
+      - "5002:5002"
+    depends_on:
+      - estoque
