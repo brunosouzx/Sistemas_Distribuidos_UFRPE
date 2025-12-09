@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ceará Lanches - Sistema de Pedidos</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <h1>🍔 Ceará Lanches</h1>
+                <p class="subtitle">Sistema de Pedidos</p>
+            </div>
+            <div class="header-actions">
+                <button id="btnMeusPedidos" class="btn btn-secondary">
+                    📋 Meus Pedidos
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Seção de Novo Pedido -->
+            <section id="sectionNovoPedido" class="section">
+                <h2>Fazer Pedido</h2>
+
+                <div class="form-group">
+                    <label for="inputCliente">Nome do Cliente</label>
+                    <input type="text" id="inputCliente" placeholder="Digite seu nome" required>
+                </div>
+
+                <div class="cardapio-section">
+                    <h3>Cardápio</h3>
+                    <div class="loading" id="loadingCardapio">Carregando cardápio...</div>
+                    <div id="cardapioList" class="cardapio-grid"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="inputObservacao">Observações (opcional)</label>
+                    <textarea id="inputObservacao" rows="3" placeholder="Ex: Sem maionese, bem passado..."></textarea>
+                </div>
+
+                <div class="pedido-resumo" id="pedidoResumo" style="display: none;">
+                    <h4>Resumo do Pedido</h4>
+                    <div class="resumo-content">
+                        <p><strong>Cliente:</strong> <span id="resumoCliente"></span></p>
+                        <p><strong>Item:</strong> <span id="resumoItem"></span></p>
+                        <p><strong>Valor:</strong> <span id="resumoValor"></span></p>
+                        <p><strong>Observações:</strong> <span id="resumoObs"></span></p>
+                    </div>
+                </div>
+
+                <button id="btnFazerPedido" class="btn btn-primary btn-large" disabled>
+                    Fazer Pedido
+                </button>
+            </section>
+
+            <!-- Seção de Pedidos -->
+            <section id="sectionPedidos" class="section" style="display: none;">
+                <div class="section-header">
+                    <h2>Meus Pedidos</h2>
+                    <button id="btnVoltar" class="btn btn-secondary">← Voltar</button>
+                </div>
+
+                <div class="filters">
+                    <button class="filter-btn active" data-status="todos">Todos</button>
+                    <button class="filter-btn" data-status="PENDENTE">Pendente</button>
+                    <button class="filter-btn" data-status="PREPARANDO">Preparando</button>
+                    <button class="filter-btn" data-status="PRONTO">Pronto</button>
+                </div>
+
+                <div class="loading" id="loadingPedidos" style="display: none;">Carregando pedidos...</div>
+                <div id="pedidosList" class="pedidos-list"></div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>© 2025 Ceará Lanches - Sistema Distribuído</p>
+            <p class="footer-subtitle">UFRPE - Sistemas Distribuídos</p>
+        </footer>
+    </div>
+
+    <!-- Modal de Sucesso -->
+    <div id="modalSucesso" class="modal">
+        <div class="modal-content success">
+            <span class="close">&times;</span>
+            <div class="modal-icon">✅</div>
+            <h3>Pedido Realizado!</h3>
+            <p id="modalMensagem"></p>
+            <button id="btnOkModal" class="btn btn-primary">OK</button>
+        </div>
+    </div>
+
+    <!-- Modal de Erro -->
+    <div id="modalErro" class="modal">
+        <div class="modal-content error">
+            <span class="close">&times;</span>
+            <div class="modal-icon">❌</div>
+            <h3>Erro!</h3>
+            <p id="modalErroMensagem"></p>
+            <button id="btnOkErro" class="btn btn-secondary">OK</button>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+
+</html>

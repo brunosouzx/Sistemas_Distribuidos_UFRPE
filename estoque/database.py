@@ -71,7 +71,10 @@ def init_db():
                 ('pao', 100, 'unidade', 20),
                 ('carne', 100, 'unidade', 20),
                 ('queijo', 50, 'fatia', 10),
+                ('presunto', 50, 'fatia', 10),
                 ('bacon', 30, 'fatia', 10),
+                ('calabresa', 30, 'fatia', 10),
+                ('frango', 30, 'porcao', 10),
                 ('ovo', 50, 'unidade', 15),
                 ('alface', 40, 'folha', 10),
                 ('tomate', 40, 'fatia', 10),
@@ -96,18 +99,31 @@ def init_db():
                 ('X-Bacon', 'queijo', 1),
                 ('X-Bacon', 'bacon', 2),
 
-                ('X-Tudo', 'pao', 1),
-                ('X-Tudo', 'carne', 1),
-                ('X-Tudo', 'queijo', 2),
-                ('X-Tudo', 'bacon', 2),
-                ('X-Tudo', 'ovo', 1),
-                ('X-Tudo', 'alface', 2),
-                ('X-Tudo', 'tomate', 2),
-
                 ('X-Egg', 'pao', 1),
                 ('X-Egg', 'carne', 1),
                 ('X-Egg', 'queijo', 1),
                 ('X-Egg', 'ovo', 1),
+
+
+                ('X-Calabresa', 'pao', 1), ('X-Calabresa', 'carne', 1),
+                ('X-Calabresa', 'queijo', 1), ('X-Calabresa', 'calabresa', 1),
+                ('X-Calabresa', 'alface', 1),
+
+
+                ('X-Frango', 'pao', 1), ('X-Frango', 'frango', 1),
+                ('X-Frango', 'queijo', 1), ('X-Frango', 'presunto', 1),
+                ('X-Frango', 'alface', 1),
+
+
+                ('X-Ceara', 'pao', 1), ('X-Ceara', 'carne', 2),
+                ('X-Ceara', 'frango', 1), ('X-Ceara', 'bacon', 2),
+                ('X-Ceara', 'calabresa', 1), ('X-Ceara', 'queijo', 2),
+                ('X-Ceara', 'presunto', 2), ('X-Ceara', 'ovo', 2),
+
+
+                ('X-Tudo', 'pao', 1), ('X-Tudo', 'carne', 1),
+                ('X-Tudo', 'queijo', 1), ('X-Tudo', 'presunto', 1),
+                ('X-Tudo', 'bacon', 1), ('X-Tudo', 'ovo', 1),
             ]
             cursor.executemany('''
                 INSERT INTO receitas (

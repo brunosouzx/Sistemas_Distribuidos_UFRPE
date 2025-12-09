@@ -5,9 +5,11 @@ import time
 import database as db
 import pika
 from flasgger import Swagger
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
+from flask_cors import CORS
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static')
+CORS(app)  # Habilitar CORS para todas as rotas
 swagger = Swagger(app)
 
 # Inicializar banco de dados
@@ -353,6 +355,18 @@ def iniciar_consumidor():
         except Exception as e:
             print(f"[CAIXA CONSUMER] Erro inesperado: {e}")
             time.sleep(5)
+
+
+@app.route('/')
+def index():
+    """Serve a página inicial do frontend."""
+    return send_from_directory(app.static_folder, 'index.html')
+
+
+@app.route('/static/<path:filename>')
+def serve_static(filename):
+    """Serve arquivos estáticos (CSS, JS, etc)."""
+    return send_from_directory(app.static_folder, filename)
 
 
 if __name__ == '__main__':

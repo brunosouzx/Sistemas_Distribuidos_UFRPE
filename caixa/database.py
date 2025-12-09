@@ -54,10 +54,21 @@ def init_db():
         cursor.execute('SELECT COUNT(*) as count FROM cardapio')
         if cursor.fetchone()['count'] == 0:
             itens_iniciais = [
+                # Hambúrgueres
                 ('X-Salada', 'Hambúrguer com salada', 15.00),
                 ('X-Bacon', 'Hambúrguer com bacon', 18.00),
-                ('X-Tudo', 'Hambúrguer completo', 22.00),
                 ('X-Egg', 'Hambúrguer com ovo', 16.00),
+                ('X-Calabresa', 'Carne, queijo, calabresa acebolada', 26.00),
+                ('X-Frango', 'Filé de frango, queijo, presunto', 26.00),
+                ('X-Tudo', 'Completo com bacon, ovo e presunto', 32.00),
+                ('X-Ceara', 'O gigante: Carne dupla, frango, bacon,'
+                 ' calabresa e ovo', 42.00),
+                # Bebidas
+                ('Coca-Cola', 'Refrigerante 350ml', 5.00),
+                ('Guaraná', 'Refrigerante 350ml', 5.00),
+                ('Suco de Laranja', 'Suco natural 300ml', 7.00),
+                ('Água Mineral', 'Água sem gás 500ml', 3.00),
+                ('Cerveja', 'Cerveja long neck 355ml', 8.00),
             ]
             cursor.executemany(
                 'INSERT INTO cardapio (nome, descricao, preco) '
