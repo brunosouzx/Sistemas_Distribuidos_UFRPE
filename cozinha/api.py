@@ -2,9 +2,11 @@ import database as db
 # Importar função de publicação do módulo app
 from app import publicar_pedido_preparando, publicar_pedido_pronto
 from flasgger import Swagger
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
+from flask_cors import CORS
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static')
+CORS(app)  # Habilitar CORS para todas as rotas
 swagger = Swagger(app)
 
 # Inicializar banco de dados
@@ -244,6 +246,18 @@ def health_check():
         "status": "online",
         "servico": "cozinha_api"
     }), 200
+
+
+@app.route('/')
+def index():
+    """Serve a página inicial do frontend da cozinha."""
+    return send_from_directory(app.static_folder, 'index.html')
+
+
+@app.route('/static/<path:filename>')
+def serve_static(filename):
+    """Serve arquivos estáticos (CSS, JS, etc)."""
+    return send_from_directory(app.static_folder, filename)
 
 
 if __name__ == '__main__':

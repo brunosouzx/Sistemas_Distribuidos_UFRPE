@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cozinha - Ceará Lanches</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <h1>👨‍🍳 Cozinha - Ceará Lanches</h1>
+                <p class="subtitle">Kitchen Display System (KDS)</p>
+            </div>
+            <div class="header-stats">
+                <div class="stat-card">
+                    <span class="stat-number" id="statRecebidos">0</span>
+                    <span class="stat-label">Recebidos</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number" id="statPreparando">0</span>
+                    <span class="stat-label">Preparando</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number" id="statProntos">0</span>
+                    <span class="stat-label">Prontos</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Filtros -->
+            <div class="filters">
+                <button class="filter-btn active" data-status="todos">📋 Todos</button>
+                <button class="filter-btn" data-status="RECEBIDO">🔔 Recebidos</button>
+                <button class="filter-btn" data-status="PREPARANDO">🍳 Preparando</button>
+                <button class="filter-btn" data-status="PRONTO">✅ Prontos</button>
+                <button id="btnRefresh" class="btn-refresh">🔄 Atualizar</button>
+            </div>
+
+            <!-- Loading -->
+            <div class="loading" id="loading" style="display: none;">
+                <div class="spinner"></div>
+                <p>Carregando pedidos...</p>
+            </div>
+
+            <!-- Lista de Pedidos -->
+            <div id="pedidosGrid" class="pedidos-grid"></div>
+
+            <!-- Mensagem Vazia -->
+            <div id="emptyState" class="empty-state" style="display: none;">
+                <div class="empty-icon">🍔</div>
+                <h3>Nenhum pedido encontrado</h3>
+                <p>Aguardando novos pedidos...</p>
+            </div>
+
+            <!-- Seção de Estoque -->
+            <section class="estoque-section">
+                <div class="estoque-header">
+                    <h2>📦 Estoque de Ingredientes</h2>
+                    <button id="btnRefreshEstoque" class="btn-refresh">🔄</button>
+                </div>
+                <div id="estoqueLoading" class="loading" style="display: none;">
+                    <div class="spinner"></div>
+                </div>
+                <div class="estoque-table-container">
+                    <table id="estoqueTable" class="estoque-table">
+                        <thead>
+                            <tr>
+                                <th>Ingrediente</th>
+                                <th>Quantidade</th>
+                                <th>Unidade</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="estoqueTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal de Ação -->
+    <div id="modalAcao" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h3 id="modalTitulo">Iniciar Preparo</h3>
+            <div class="modal-body">
+                <div class="pedido-detalhes">
+                    <p><strong>Pedido:</strong> <span id="modalPedidoId"></span></p>
+                    <p><strong>Cliente:</strong> <span id="modalCliente"></span></p>
+                    <p><strong>Item:</strong> <span id="modalItem"></span></p>
+                    <p id="modalObsContainer" style="display: none;">
+                        <strong>Observação:</strong> <span id="modalObs"></span>
+                    </p>
+                </div>
+                <div id="tempoPreparoContainer" style="display: none;">
+                    <label for="inputTempoPreparo">Tempo de preparação (minutos):</label>
+                    <input type="number" id="inputTempoPreparo" min="1" max="60" value="8">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="btnCancelar" class="btn btn-secondary">Cancelar</button>
+                <button id="btnConfirmar" class="btn btn-primary">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast"></div>
+
+    <script src="/static/app.js"></script>
+</body>
+
+</html>
