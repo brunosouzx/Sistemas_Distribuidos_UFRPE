@@ -4,13 +4,11 @@ import time
 import database as db
 import pika
 
-# Inicializar banco de dados
 db.init_db()
 
 
 def callback(ch, method, properties, body):
     """Processa pedidos e dá baixa nos ingredientes."""
-    # Verificar número de tentativas
     retry_count = 0
     if properties.headers and 'x-death' in properties.headers:
         retry_count = len(properties.headers['x-death'])
@@ -24,7 +22,6 @@ def callback(ch, method, properties, body):
             f"\n[ESTOQUE] Processando pedido #{pedido_id}: {item_pedido}...",
             flush=True)
 
-        # Verificar disponibilidade
         disponivel, mensagem = db.verificar_disponibilidade(item_pedido)
 
         if not disponivel:
@@ -60,7 +57,7 @@ def callback(ch, method, properties, body):
         print(f"[ERRO] Erro ao processar no estoque: {e}", flush=True)
 
         # Limitar tentativas: após 3 falhas, enviar para DLQ
-        if retry_count >= 2:  # 0, 1, 2 = 3 tentativas
+        if retry_count >= 2:
             print(f"[ESTOQUE] ⚠ Limite de tentativas atingido "
                   f" ({retry_count + 1}). Enviando para DLQ...", flush=True)
             ch.basic_nack(delivery_tag=method.delivery_tag, requeue=False)

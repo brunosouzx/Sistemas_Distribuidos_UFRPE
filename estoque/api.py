@@ -4,10 +4,10 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app)  # Habilitar CORS para todas as rotas
+CORS(app)
 swagger = Swagger(app)
 
-# Inicializar banco de dados
+
 db.init_db()
 
 

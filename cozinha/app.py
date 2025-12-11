@@ -4,7 +4,6 @@ import time
 import database as db
 import pika
 
-# Inicializar banco de dados
 db.init_db()
 
 
@@ -20,7 +19,7 @@ def publicar_status_pedido(pedido_id, cliente, item, status):
             exchange='pedidos_prontos_exchange', exchange_type='fanout')
 
         mensagem = {
-            'pedido_caixa_id': pedido_id,  # ID do pedido no caixa
+            'pedido_caixa_id': pedido_id,
             'cliente': cliente,
             'item': item,
             'status': status
@@ -72,21 +71,19 @@ def callback(ch, method, properties, body):
         if observacao:
             print(f"          Observação: {observacao}", flush=True)
 
-        # Apenas registrar no banco de dados como RECEBIDO
         cozinha_id = db.registrar_pedido(pedido_id, cliente, item, observacao)
 
         print(
             f"[COZINHA] Pedido #{pedido_id} registrado na fila "
             f"(ID cozinha: {cozinha_id})", flush=True)
 
-        # Confirmar processamento bem-sucedido
         ch.basic_ack(delivery_tag=method.delivery_tag)
 
     except Exception as e:
         print(f"[ERRO] Erro ao processar pedido na cozinha: {e}", flush=True)
 
         # Limitar tentativas: após 3 falhas, enviar para DLQ
-        if retry_count >= 2:  # 0, 1, 2 = 3 tentativas
+        if retry_count >= 2:
             print(f"[COZINHA] ⚠ Limite de tentativas atingido "
                   f" ({retry_count + 1}). Enviando para DLQ...", flush=True)
             ch.basic_nack(delivery_tag=method.delivery_tag, requeue=False)

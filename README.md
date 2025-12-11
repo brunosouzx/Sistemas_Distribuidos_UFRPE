@@ -6,6 +6,7 @@ Este projeto implementa um sistema de gerenciamento de pedidos para uma hamburgu
 
 O objetivo é demonstrar conceitos fundamentais de sistemas distribuídos, como desacoplamento de serviços, comunicação assíncrona via filas de mensagens e tolerância a falhas.
 
+Alunos: Bruno Rodrigues de Souza e Guilherme de Souza Melo
 ---
 
 ## 🏛️ Arquitetura do Sistema

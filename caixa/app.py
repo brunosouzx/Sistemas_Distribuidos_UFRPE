@@ -9,10 +9,10 @@ from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 
 app = Flask(__name__, static_folder='static')
-CORS(app)  # Habilitar CORS para todas as rotas
+CORS(app)
 swagger = Swagger(app)
 
-# Inicializar banco de dados
+
 db.init_db()
 
 
@@ -74,7 +74,6 @@ def novo_pedido():
     try:
         dados = request.json
 
-        # Validações básicas
         if not dados:
             return jsonify({"erro": "Dados não fornecidos"}), 400
 
@@ -88,14 +87,12 @@ def novo_pedido():
         if not item:
             return jsonify({"erro": "Item é obrigatório"}), 400
 
-        # Inserir pedido no banco de dados
         pedido_criado = db.inserir_pedido(cliente, item, observacao or None)
 
         print(
             f"[CAIXA] Pedido #{pedido_criado['id']} registrado: {item} para "
             f"{cliente}")
 
-        # Preparar dados para a fila
         pedido_para_fila = {
             'id': pedido_criado['id'],
             'cliente': cliente,
@@ -103,7 +100,6 @@ def novo_pedido():
             'observacao': observacao or None
         }
 
-        # Enviar para fila
         if enviar_para_fila(pedido_para_fila):
             print(f"[CAIXA] Pedido #{pedido_criado['id']} enviado para a fila")
             return jsonify({
@@ -253,7 +249,6 @@ def callback(ch, method, properties, body):
 
         print(f"[CAIXA CONSUMER] Pedido #{pedido_id} está {status}!")
 
-        # Atualizar status no banco de dados
         db.atualizar_status_pedido(pedido_id, status)
         print(f"[CAIXA CONSUMER] Status do pedido #{pedido_id} atualizado "
               f"para {status}")
@@ -268,7 +263,7 @@ def callback(ch, method, properties, body):
         print(f"[CAIXA CONSUMER] Erro ao processar mensagem: {e}")
 
         # Limitar tentativas: após 3 falhas, enviar para DLQ
-        if retry_count >= 2:  # 0, 1, 2 = 3 tentativas
+        if retry_count >= 2:
             print(f"[CAIXA CONSUMER] ⚠ Limite de tentativas atingido "
                   f"({retry_count + 1}). Enviando para DLQ...")
             ch.basic_nack(delivery_tag=method.delivery_tag, requeue=False)
@@ -375,5 +370,4 @@ if __name__ == '__main__':
     consumer_thread.start()
     print("[CAIXA] Consumer iniciado em thread separada")
 
-    # Iniciar Flask na thread principal
     app.run(host='0.0.0.0', port=5000)

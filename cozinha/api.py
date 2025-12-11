@@ -6,10 +6,10 @@ from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 
 app = Flask(__name__, static_folder='static')
-CORS(app)  # Habilitar CORS para todas as rotas
+CORS(app)
 swagger = Swagger(app)
 
-# Inicializar banco de dados
+
 db.init_db()
 
 
@@ -193,14 +193,11 @@ def finalizar_pedido_endpoint(cozinha_id):
                 {"erro": f"Status inválido: {pedido['status']}"}
             ), 400
 
-        # Obter tempo de preparação do body (opcional)
         dados = request.json or {}
         tempo_preparacao = dados.get('tempo_preparacao', 0)
 
-        # Finalizar no banco de dados
         dados_pedido = db.finalizar_pedido(cozinha_id, tempo_preparacao)
 
-        # Publicar mensagem no RabbitMQ
         publicado = publicar_pedido_pronto(
             dados_pedido['pedido_id'],
             dados_pedido['cliente'],

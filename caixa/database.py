@@ -84,7 +84,6 @@ def inserir_pedido(cliente, item, observacao=None):
     with get_db_connection() as conn:
         cursor = conn.cursor()
 
-        # Buscar preço do item
         cursor.execute(
             'SELECT preco, disponivel FROM cardapio WHERE nome = ?',
             (item,)
@@ -99,7 +98,6 @@ def inserir_pedido(cliente, item, observacao=None):
 
         preco = result['preco']
 
-        # Inserir pedido
         cursor.execute('''
             INSERT INTO pedidos (cliente, item, observacao, valor, status)
             VALUES (?, ?, ?, ?, 'PENDENTE')
