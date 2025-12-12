@@ -120,23 +120,24 @@ def listar_pedidos_por_status(status):
 
 
 def listar_fila_preparo():
-    """Lista pedidos que ainda não foram finalizados."""
+    """Lista pedidos para o painel KDS (incluindo finalizados)."""
     with get_db_connection() as conn:
         cursor = conn.cursor()
 
         cursor.execute('''
             SELECT * FROM pedidos_cozinha
-            WHERE status IN ('RECEBIDO', 'PREPARANDO')
             ORDER BY
                 CASE status
                     WHEN 'PREPARANDO' THEN 1
                     WHEN 'RECEBIDO' THEN 2
+                    WHEN 'PRONTO' THEN 3
+                    ELSE 4
                 END,
                 data_recebimento ASC
+            LIMIT 100
         ''')
 
         return [dict(row) for row in cursor.fetchall()]
-
 
 def buscar_pedido(cozinha_id):
     """Busca um pedido específico por ID."""

@@ -632,3 +632,21 @@ body {
         padding: 10px;
     }
 }
+
+/* Botão pequeno para a tabela de estoque (NOVO) */
+.btn-sm {
+    padding: 5px 12px;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.btn-sm:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+}

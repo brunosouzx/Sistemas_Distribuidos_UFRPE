@@ -10,7 +10,6 @@
 
 <body>
     <div class="container">
-        <!-- Header -->
         <header class="header">
             <div class="logo">
                 <h1>👨‍🍳 Cozinha - Ceará Lanches</h1>
@@ -32,9 +31,7 @@
             </div>
         </header>
 
-        <!-- Main Content -->
         <main class="main-content">
-            <!-- Filtros -->
             <div class="filters">
                 <button class="filter-btn active" data-status="todos">📋 Todos</button>
                 <button class="filter-btn" data-status="RECEBIDO">🔔 Recebidos</button>
@@ -43,23 +40,19 @@
                 <button id="btnRefresh" class="btn-refresh">🔄 Atualizar</button>
             </div>
 
-            <!-- Loading -->
             <div class="loading" id="loading" style="display: none;">
                 <div class="spinner"></div>
                 <p>Carregando pedidos...</p>
             </div>
 
-            <!-- Lista de Pedidos -->
             <div id="pedidosGrid" class="pedidos-grid"></div>
 
-            <!-- Mensagem Vazia -->
             <div id="emptyState" class="empty-state" style="display: none;">
                 <div class="empty-icon">🍔</div>
                 <h3>Nenhum pedido encontrado</h3>
                 <p>Aguardando novos pedidos...</p>
             </div>
 
-            <!-- Seção de Estoque -->
             <section class="estoque-section">
                 <div class="estoque-header">
                     <h2>📦 Estoque de Ingredientes</h2>
@@ -76,7 +69,7 @@
                                 <th>Quantidade</th>
                                 <th>Unidade</th>
                                 <th>Status</th>
-                            </tr>
+                                <th>Ações</th> </tr>
                         </thead>
                         <tbody id="estoqueTableBody">
                         </tbody>
@@ -86,7 +79,6 @@
         </main>
     </div>
 
-    <!-- Modal de Ação -->
     <div id="modalAcao" class="modal">
         <div class="modal-content">
             <span class="close">&times;</span>
@@ -112,7 +104,23 @@
         </div>
     </div>
 
-    <!-- Toast Notification -->
+    <div id="modalEstoque" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="fecharModalEstoque()">&times;</span>
+            <h3>📦 Repor Estoque</h3>
+            <div class="modal-body">
+                <p>Ingrediente: <strong id="modalIngredienteNome" style="color: var(--primary-color);"></strong></p>
+                
+                <label for="inputQuantidadeEstoque">Quantidade a adicionar:</label>
+                <input type="number" id="inputQuantidadeEstoque" min="1" value="10" style="font-size: 1.2rem; padding: 10px; width: 100%;">
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="fecharModalEstoque()">Cancelar</button>
+                <button class="btn btn-success" onclick="confirmarReposicao()">Confirmar Reposição</button>
+            </div>
+        </div>
+    </div>
+
     <div id="toast" class="toast"></div>
 
     <script src="/static/app.js"></script>
