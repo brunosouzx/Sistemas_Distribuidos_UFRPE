@@ -145,59 +145,34 @@ def iniciar_preparo_endpoint(cozinha_id):
 @app.route('/pedidos/<int:cozinha_id>/finalizar', methods=['PUT'])
 def finalizar_pedido_endpoint(cozinha_id):
     """
-    Finaliza o preparo de um pedido e publica mensagem no RabbitMQ.
-    ---
-    parameters:
-      - name: cozinha_id
-        in: path
-        type: integer
-        required: true
-        description: ID do pedido na cozinha
-      - name: body
-        in: body
-        required: false
-        schema:
-          type: object
-          properties:
-            tempo_preparacao:
-              type: integer
-              example: 8
-              description: Tempo de preparação em minutos
-    responses:
-      200:
-        description: Pedido finalizado e mensagem publicada
-      404:
-        description: Pedido não encontrado
-      400:
-        description: Pedido não está em preparo
+    Finaliza o pedido e CALCULA automaticamente o tempo de preparo.
     """
     try:
+        # 1. Busca o pedido para ver a hora que começou
         pedido = db.buscar_pedido(cozinha_id)
         if not pedido:
             return jsonify({"erro": "Pedido não encontrado"}), 404
 
-        # Validar que o pedido está em PREPARANDO
-        if pedido['status'] == 'PRONTO':
-            return jsonify(
-                {"erro": "Pedido já está finalizado"}
-            ), 400
-
-        if pedido['status'] == 'RECEBIDO':
-            return jsonify(
-                {"erro": "Pedido não pode ser finalizado sem ter sido "
-                         "iniciado. Use PUT /pedidos/{id}/iniciar primeiro"}
-            ), 400
-
         if pedido['status'] != 'PREPARANDO':
-            return jsonify(
-                {"erro": f"Status inválido: {pedido['status']}"}
-            ), 400
+            return jsonify({"erro": "Pedido precisa estar EM PREPARO para finalizar"}), 400
 
-        dados = request.json or {}
-        tempo_preparacao = dados.get('tempo_preparacao', 0)
+        # 2. Calcula o tempo decorrido (Agora - Inicio)
+        import datetime
+        
+        # A data vem do banco como string, precisamos converter se necessário
+        # O SQLite retorna strings no formato 'YYYY-MM-DD HH:MM:SS'
+        # Vamos deixar o banco calcular ou fazer uma estimativa simples aqui se o banco falhar
+        
+        # Na verdade, a melhor prática é deixar o banco calcular na hora do UPDATE
+        # Mas para simplificar, vamos passar o cálculo para a função do database.py
+        # Vamos alterar a chamada do database para não exigir tempo manual
+        
+        # NOTA: Vamos alterar a função finalizar_pedido no database.py logo abaixo para calcular sozinha
+        
+        # Chama o banco (que vai calcular o tempo)
+        dados_pedido = db.finalizar_pedido_automatico(cozinha_id)
 
-        dados_pedido = db.finalizar_pedido(cozinha_id, tempo_preparacao)
-
+        # Publica no RabbitMQ
         publicado = publicar_pedido_pronto(
             dados_pedido['pedido_id'],
             dados_pedido['cliente'],
@@ -206,8 +181,8 @@ def finalizar_pedido_endpoint(cozinha_id):
 
         return jsonify({
             "mensagem": "Pedido finalizado com sucesso",
+            "tempo_total": dados_pedido['tempo_preparacao'], # O banco devolve o tempo calculado
             "pedido_id": dados_pedido['pedido_id'],
-            "item": dados_pedido['item'],
             "publicado_rabbitmq": publicado
         }), 200
     except Exception as e:

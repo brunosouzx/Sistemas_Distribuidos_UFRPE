@@ -8,7 +8,7 @@ let state = {
   estoque: [],
   filtroAtivo: "todos",
   pedidoSelecionado: null,
-  ingredienteSelecionado: null, // Novo
+  ingredienteSelecionado: null,
   atualizacaoAutomatica: null,
 };
 
@@ -34,7 +34,7 @@ const elements = {
   btnConfirmar: document.getElementById("btnConfirmar"),
   btnCancelar: document.getElementById("btnCancelar"),
   
-  // Modal de Estoque (NOVO)
+  // Modal de Estoque
   modalEstoque: document.getElementById("modalEstoque"),
   modalIngredienteNome: document.getElementById("modalIngredienteNome"),
   inputQuantidadeEstoque: document.getElementById("inputQuantidadeEstoque"),
@@ -131,7 +131,7 @@ async function iniciarPreparo(pedidoId) {
     const response = await fetch(`${API_URL}/pedidos/${pedidoId}/iniciar`, { method: "PUT" });
     const data = await response.json();
     if (response.ok) {
-      mostrarToast("Preparo iniciado!", "success");
+      mostrarToast("Cronômetro iniciado! ⏱️", "success");
       carregarPedidos();
       fecharModal();
     } else {
@@ -142,16 +142,19 @@ async function iniciarPreparo(pedidoId) {
   }
 }
 
-async function finalizarPedido(pedidoId, tempoPreparo) {
+async function finalizarPedido(pedidoId) {
   try {
+    // Não enviamos mais tempo manual, o backend calcula
     const response = await fetch(`${API_URL}/pedidos/${pedidoId}/finalizar`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tempo_preparacao: parseInt(tempoPreparo) }),
+      body: JSON.stringify({}), 
     });
     const data = await response.json();
     if (response.ok) {
-      mostrarToast("Pedido finalizado!", "success");
+      // O backend retorna o tempo calculado
+      const tempoTotal = data.tempo_total || "calculado";
+      mostrarToast(`✅ Pedido finalizado em ${tempoTotal} min!`, "success");
       carregarPedidos();
       fecharModal();
     } else {
@@ -177,7 +180,7 @@ async function carregarEstoque() {
   }
 }
 
-// --- Lógica Modal Estoque (NOVO) ---
+// --- Lógica Modal Estoque ---
 function abrirModalEstoque(ingrediente) {
     state.ingredienteSelecionado = ingrediente;
     elements.modalIngredienteNome.textContent = ingrediente;
@@ -261,8 +264,14 @@ function criarPedidoCard(pedido) {
   const dataRecebimento = new Date(pedido.data_recebimento).toLocaleString("pt-BR");
   let tempoInfo = `<p class="pedido-tempo">📅 ${dataRecebimento}</p>`;
   
+  // Se estiver pronto, mostra o tempo final
   if (pedido.status === 'PRONTO' && pedido.tempo_preparacao) {
-      tempoInfo += `<p class="pedido-tempo">⏱️ ${pedido.tempo_preparacao} min</p>`;
+      tempoInfo += `<p class="pedido-tempo">⏱️ Total: ${pedido.tempo_preparacao} min</p>`;
+  }
+  // Se estiver preparando, mostra a hora que iniciou
+  if (pedido.status === 'PREPARANDO' && pedido.data_inicio_preparo) {
+      const horaInicio = new Date(pedido.data_inicio_preparo).toLocaleTimeString("pt-BR", {hour: '2-digit', minute:'2-digit'});
+      tempoInfo += `<p class="pedido-tempo" style="color: var(--secondary-color)">🍳 Iniciado às ${horaInicio}</p>`;
   }
 
   const obsHtml = pedido.observacao
@@ -310,7 +319,6 @@ function renderizarEstoque() {
       let statusClass = qtd === 0 ? "status-critico" : qtd <= item.estoque_minimo ? "status-baixo" : "status-ok";
       let statusText = qtd === 0 ? "Esgotado" : qtd <= item.estoque_minimo ? "Baixo" : "OK";
 
-      // Botão onclick="abrirModalEstoque"
       return `
         <tr>
           <td><strong>${item.nome}</strong></td>
@@ -327,19 +335,25 @@ function renderizarEstoque() {
     }).join("");
 }
 
-// Modais de Pedido
+// --- LÓGICA DE MODAIS DO PEDIDO (MODIFICADA) ---
+
 function abrirModalIniciar(id) {
   const p = state.pedidos.find((x) => x.id === id);
   if (!p) return;
   state.pedidoSelecionado = p;
+  
   elements.modalTitulo.textContent = "🍳 Iniciar Preparo";
   elements.modalPedidoId.textContent = `#${p.pedido_id}`;
   elements.modalCliente.textContent = p.cliente;
   elements.modalItem.textContent = p.item;
   elements.modalObsContainer.style.display = p.observacao ? "block" : "none";
   if(p.observacao) elements.modalObs.textContent = p.observacao;
-  elements.tempoPreparoContainer.style.display = "none";
-  elements.btnConfirmar.textContent = "Iniciar";
+  
+  // Esconde qualquer input de tempo (contagem será automática ao clicar)
+  if(elements.tempoPreparoContainer) elements.tempoPreparoContainer.style.display = "none";
+  
+  elements.btnConfirmar.textContent = "Iniciar Agora";
+  elements.btnConfirmar.className = "btn btn-warning";
   elements.modalAcao.style.display = "block";
 }
 
@@ -347,14 +361,47 @@ function abrirModalFinalizar(id) {
   const p = state.pedidos.find((x) => x.id === id);
   if (!p) return;
   state.pedidoSelecionado = p;
-  elements.modalTitulo.textContent = "✅ Finalizar";
+  
+  elements.modalTitulo.textContent = "✅ Finalizar Pedido";
   elements.modalPedidoId.textContent = `#${p.pedido_id}`;
   elements.modalCliente.textContent = p.cliente;
   elements.modalItem.textContent = p.item;
   elements.modalObsContainer.style.display = p.observacao ? "block" : "none";
   if(p.observacao) elements.modalObs.textContent = p.observacao;
-  elements.tempoPreparoContainer.style.display = "block";
-  elements.btnConfirmar.textContent = "Finalizar";
+  
+  // CÁLCULO VISUAL DO TEMPO
+  let textoTempo = "Calculando...";
+  if (p.data_inicio_preparo) {
+      // Tenta calcular diferença visualmente para o usuário saber quanto tempo levou
+      try {
+          // O formato da data pode variar dependendo do browser/banco, mas o Date do JS costuma aceitar ISO
+          // Se o banco salvar em UTC e o browser estiver em local, pode dar diferença se não tiver 'Z'. 
+          // Mas como gravamos CURRENT_TIMESTAMP, geralmente está ok.
+          const inicio = new Date(p.data_inicio_preparo);
+          const agora = new Date();
+          
+          // Fallback para caso a data seja inválida
+          if(!isNaN(inicio.getTime())){
+             const diffMs = agora - inicio;
+             // Se der negativo (fuso horário), assumimos pelo menos 1 min
+             const diffMins = Math.max(1, Math.floor(diffMs / 60000));
+             textoTempo = `${diffMins} minutos decorridos`;
+          }
+      } catch(e) { console.error(e); }
+  }
+
+  // Mostra o tempo calculado AUTOMATICAMENTE no modal, sem input para editar
+  const container = elements.tempoPreparoContainer;
+  container.style.display = "block";
+  container.innerHTML = `
+      <div style="background: #e8f5e9; color: #2e7d32; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid #c8e6c9;">
+        <p style="margin-bottom: 5px; font-size: 0.9rem;">Tempo de preparo:</p>
+        <strong style="font-size: 1.4rem;">⏱️ ${textoTempo}</strong>
+      </div>
+  `;
+  
+  elements.btnConfirmar.textContent = "Finalizar Pedido";
+  elements.btnConfirmar.className = "btn btn-success";
   elements.modalAcao.style.display = "block";
 }
 
@@ -365,10 +412,13 @@ function fecharModal() {
 
 function confirmarAcao() {
   if (!state.pedidoSelecionado) return;
+  
   if (state.pedidoSelecionado.status === "RECEBIDO") {
+    // Ação: Iniciar (sem parâmetros extras)
     iniciarPreparo(state.pedidoSelecionado.id);
   } else {
-    finalizarPedido(state.pedidoSelecionado.id, elements.inputTempoPreparo.value || 8);
+    // Ação: Finalizar (sem parâmetros extras, backend calcula)
+    finalizarPedido(state.pedidoSelecionado.id);
   }
 }
 

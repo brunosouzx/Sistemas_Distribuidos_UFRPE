@@ -3,6 +3,10 @@ from contextlib import contextmanager
 
 DATABASE_PATH = 'cozinha.db'
 
+# Define o ajuste de fuso horário para Brasília (UTC-3)
+# No SQLite, usamos isso nas funções datetime()
+FUSO_BRASILIA = '-03:00'
+
 
 @contextmanager
 def get_db_connection():
@@ -25,6 +29,7 @@ def init_db():
         cursor = conn.cursor()
 
         # Tabela de pedidos na cozinha
+        # Note que removemos o DEFAULT CURRENT_TIMESTAMP do CREATE para controlar no INSERT
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS pedidos_cozinha (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -34,7 +39,7 @@ def init_db():
                 observacao TEXT,
                 status VARCHAR(20) DEFAULT 'RECEBIDO',
                 tempo_preparacao INTEGER DEFAULT 0,
-                data_recebimento TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                data_recebimento TIMESTAMP,
                 data_inicio_preparo TIMESTAMP,
                 data_conclusao TIMESTAMP
             )
@@ -50,28 +55,29 @@ def init_db():
 
 
 def registrar_pedido(pedido_id, cliente, item, observacao=None):
-    """Registra um novo pedido recebido na cozinha."""
+    """Registra um novo pedido recebido na cozinha (Hora Brasília)."""
     with get_db_connection() as conn:
         cursor = conn.cursor()
 
-        cursor.execute('''
+        # Usamos datetime('now', '-03:00') para forçar Brasília
+        cursor.execute(f'''
             INSERT INTO pedidos_cozinha
-            (pedido_id, cliente, item, observacao, status)
-            VALUES (?, ?, ?, ?, 'RECEBIDO')
+            (pedido_id, cliente, item, observacao, status, data_recebimento)
+            VALUES (?, ?, ?, ?, 'RECEBIDO', datetime('now', '{FUSO_BRASILIA}'))
         ''', (pedido_id, cliente, item, observacao))
 
         return cursor.lastrowid
 
 
 def iniciar_preparo(cozinha_id):
-    """Marca um pedido como em preparação."""
+    """Marca um pedido como em preparação e grava hora de início (Brasília)."""
     with get_db_connection() as conn:
         cursor = conn.cursor()
 
-        cursor.execute('''
+        cursor.execute(f'''
             UPDATE pedidos_cozinha
             SET status = 'PREPARANDO',
-                data_inicio_preparo = CURRENT_TIMESTAMP
+                data_inicio_preparo = datetime('now', '{FUSO_BRASILIA}')
             WHERE id = ?
         ''', (cozinha_id,))
 
@@ -80,22 +86,61 @@ def iniciar_preparo(cozinha_id):
 
 
 def finalizar_pedido(cozinha_id, tempo_preparacao):
-    """Marca um pedido como pronto."""
+    """
+    OBSOLETO: Use finalizar_pedido_automatico.
+    Mantido apenas para compatibilidade se necessário.
+    """
+    return finalizar_pedido_automatico(cozinha_id)
+
+
+def finalizar_pedido_automatico(cozinha_id):
+    """
+    Marca como pronto e calcula o tempo em minutos automaticamente.
+    Usa a diferença entre AGORA (Brasília) e INICIO (Brasília).
+    """
     with get_db_connection() as conn:
         cursor = conn.cursor()
 
-        cursor.execute('''
+        # Cálculo: (Agora - Inicio) em dias * 24h * 60m
+        # Usamos datetime('now', '-03:00') para garantir consistência
+        cursor.execute(f'''
             UPDATE pedidos_cozinha
             SET status = 'PRONTO',
-                tempo_preparacao = ?,
-                data_conclusao = CURRENT_TIMESTAMP
+                data_conclusao = datetime('now', '{FUSO_BRASILIA}'),
+                tempo_preparacao = CAST(
+                    (julianday('now', '{FUSO_BRASILIA}') - julianday(data_inicio_preparo)) * 24 * 60 
+                AS INTEGER)
             WHERE id = ?
-        ''', (tempo_preparacao, cozinha_id))
+        ''', (cozinha_id,))
+
+        if cursor.rowcount == 0:
+            raise ValueError(f"Pedido {cozinha_id} não encontrado")
+
+        # Retornar dados do pedido finalizado
+        cursor.execute('''
+            SELECT pedido_id, cliente, item, tempo_preparacao
+            FROM pedidos_cozinha
+            WHERE id = ?
+        ''', (cozinha_id,))
+
+        return dict(cursor.fetchone())
+
+
+def cancelar_pedido(cozinha_id):
+    """Marca um pedido como cancelado (Hora Brasília)."""
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+
+        cursor.execute(f'''
+            UPDATE pedidos_cozinha
+            SET status = 'CANCELADO',
+                data_conclusao = datetime('now', '{FUSO_BRASILIA}')
+            WHERE id = ?
+        ''', (cozinha_id,))
 
         if cursor.rowcount == 0:
             raise ValueError(f"Pedido {cozinha_id} não encontrado na cozinha")
 
-        # Retornar dados do pedido finalizado
         cursor.execute('''
             SELECT pedido_id, cliente, item
             FROM pedidos_cozinha
@@ -124,6 +169,7 @@ def listar_fila_preparo():
     with get_db_connection() as conn:
         cursor = conn.cursor()
 
+        # Ordenação inteligente: Preparando > Recebido > Pronto > Cancelado
         cursor.execute('''
             SELECT * FROM pedidos_cozinha
             ORDER BY
@@ -138,6 +184,7 @@ def listar_fila_preparo():
         ''')
 
         return [dict(row) for row in cursor.fetchall()]
+
 
 def buscar_pedido(cozinha_id):
     """Busca um pedido específico por ID."""
@@ -156,7 +203,6 @@ def estatisticas_cozinha():
     with get_db_connection() as conn:
         cursor = conn.cursor()
 
-        # Contar pedidos por status
         cursor.execute('''
             SELECT
                 status,
@@ -168,7 +214,6 @@ def estatisticas_cozinha():
         status_count = {row['status']: row['quantidade']
                         for row in cursor.fetchall()}
 
-        # Tempo médio de preparação
         cursor.execute('''
             SELECT
                 AVG(tempo_preparacao) as tempo_medio,
