@@ -367,6 +367,29 @@ body {
     color: #155724;
 }
 
+/* --- NOVOS ESTILOS PARA CANCELAMENTO --- */
+
+.status-CANCELADO {
+    background: #fadbd8;
+    color: #78281f;
+    border: 1px solid #e74c3c;
+}
+
+.pedido-card.cancelado {
+    border-color: #e74c3c;
+    opacity: 0.8;
+    background-color: #fdfefe;
+}
+
+/* Comportamento do botão de filtro cancelado */
+.filter-btn[data-status="CANCELADO"]:hover,
+.filter-btn[data-status="CANCELADO"].active {
+    background: #e74c3c !important;
+    color: white !important;
+}
+
+/* -------------------------------------- */
+
 .pedido-info {
     color: #7f8c8d;
     font-size: 0.9rem;

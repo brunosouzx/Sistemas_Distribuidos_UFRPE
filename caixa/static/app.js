@@ -5,7 +5,7 @@ const API_URL = "http://localhost:5000";
 let state = {
   cardapio: [],
   pedidos: [],
-  carrinho: [], // Array de itens: [{item: objeto, quantidade: numero}]
+  carrinho: [],
   filtroStatus: "todos",
 };
 
@@ -61,7 +61,6 @@ function setupEventListeners() {
     fecharModal(elements.modalErro);
   });
 
-  // Fechar modal com X
   document.querySelectorAll(".close").forEach((closeBtn) => {
     closeBtn.addEventListener("click", function () {
       fecharModal(this.closest(".modal"));
@@ -87,12 +86,11 @@ async function carregarCardapio() {
     elements.loadingCardapio.style.display = "block";
     const response = await fetch(`${API_URL}/cardapio`);
     const data = await response.json();
-
     state.cardapio = data.cardapio;
     renderizarCardapio();
   } catch (error) {
     console.error("Erro ao carregar cardápio:", error);
-    mostrarErro("Erro ao carregar o cardápio. Tente novamente.");
+    mostrarErro("Erro ao carregar o cardápio.");
   } finally {
     elements.loadingCardapio.style.display = "none";
   }
@@ -111,7 +109,6 @@ async function fazerPedido() {
     elements.btnFazerPedido.disabled = true;
     elements.btnFazerPedido.textContent = "Processando...";
 
-    // Criar um pedido para cada item do carrinho
     const pedidosCriados = [];
     let erros = [];
 
@@ -122,34 +119,21 @@ async function fazerPedido() {
             cliente: cliente,
             item: itemCarrinho.item.nome,
           };
-
-          // Só adicionar observacao se não estiver vazia
-          if (observacao) {
-            pedidoData.observacao = observacao;
-          }
-
-          console.log("Enviando pedido:", pedidoData);
+          if (observacao) pedidoData.observacao = observacao;
 
           const response = await fetch(`${API_URL}/pedidos`, {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify(pedidoData),
           });
 
           const data = await response.json();
-          console.log("Resposta do servidor:", data);
-
           if (response.ok) {
             pedidosCriados.push(data.pedido);
           } else {
-            erros.push(
-              `${itemCarrinho.item.nome}: ${data.erro || "Erro desconhecido"}`
-            );
+            erros.push(`${itemCarrinho.item.nome}: ${data.erro}`);
           }
         } catch (err) {
-          console.error("Erro na requisição:", err);
           erros.push(`${itemCarrinho.item.nome}: ${err.message}`);
         }
       }
@@ -158,21 +142,14 @@ async function fazerPedido() {
     if (pedidosCriados.length > 0) {
       const valorTotal = pedidosCriados.reduce((sum, p) => sum + p.valor, 0);
       const idsPedidos = pedidosCriados.map((p) => `#${p.id}`).join(", ");
-      let mensagem = `Pedidos ${idsPedidos} realizados com sucesso! Valor total: R$ ${valorTotal.toFixed(
-        2
-      )}`;
-
-      if (erros.length > 0) {
-        mensagem += `\n\nAtenção: ${erros.length} item(ns) falharam.`;
-      }
-
+      let mensagem = `Pedidos ${idsPedidos} realizados! Total: R$ ${valorTotal.toFixed(2)}`;
+      if (erros.length > 0) mensagem += `\n\nFalhas: ${erros.length}`;
       mostrarSucesso(mensagem);
     } else {
       throw new Error(erros.join("\n") || "Erro ao criar pedidos");
     }
   } catch (error) {
-    console.error("Erro ao fazer pedido:", error);
-    mostrarErro(error.message || "Erro ao fazer pedido. Tente novamente.");
+    mostrarErro(error.message);
   } finally {
     elements.btnFazerPedido.disabled = false;
     elements.btnFazerPedido.textContent = "Fazer Pedido";
@@ -184,12 +161,11 @@ async function carregarPedidos() {
     elements.loadingPedidos.style.display = "block";
     const response = await fetch(`${API_URL}/pedidos?limit=50`);
     const data = await response.json();
-
     state.pedidos = data.pedidos;
     renderizarPedidos();
   } catch (error) {
-    console.error("Erro ao carregar pedidos:", error);
-    mostrarErro("Erro ao carregar pedidos. Tente novamente.");
+    console.error("Erro pedidos:", error);
+    mostrarErro("Erro ao carregar histórico.");
   } finally {
     elements.loadingPedidos.style.display = "none";
   }
@@ -198,35 +174,25 @@ async function carregarPedidos() {
 // Renderização
 function renderizarCardapio() {
   elements.cardapioList.innerHTML = "";
-
-  // Separar por categoria
   const lanches = state.cardapio.filter((item) => item.nome.startsWith("X-"));
   const bebidas = state.cardapio.filter((item) => !item.nome.startsWith("X-"));
 
-  // Renderizar Lanches
   if (lanches.length > 0) {
-    const titleLanches = document.createElement("h4");
-    titleLanches.textContent = "🍔 Lanches";
-    titleLanches.style.gridColumn = "1 / -1";
-    titleLanches.style.marginTop = "10px";
-    elements.cardapioList.appendChild(titleLanches);
-
-    lanches.forEach((item) => {
-      elements.cardapioList.appendChild(criarCardItem(item));
-    });
+    const title = document.createElement("h4");
+    title.textContent = "🍔 Lanches";
+    title.style.gridColumn = "1 / -1";
+    title.style.marginTop = "10px";
+    elements.cardapioList.appendChild(title);
+    lanches.forEach((item) => elements.cardapioList.appendChild(criarCardItem(item)));
   }
 
-  // Renderizar Bebidas
   if (bebidas.length > 0) {
-    const titleBebidas = document.createElement("h4");
-    titleBebidas.textContent = "🥤 Bebidas";
-    titleBebidas.style.gridColumn = "1 / -1";
-    titleBebidas.style.marginTop = "20px";
-    elements.cardapioList.appendChild(titleBebidas);
-
-    bebidas.forEach((item) => {
-      elements.cardapioList.appendChild(criarCardItem(item));
-    });
+    const title = document.createElement("h4");
+    title.textContent = "🥤 Bebidas";
+    title.style.gridColumn = "1 / -1";
+    title.style.marginTop = "20px";
+    elements.cardapioList.appendChild(title);
+    bebidas.forEach((item) => elements.cardapioList.appendChild(criarCardItem(item)));
   }
 }
 
@@ -239,47 +205,32 @@ function criarCardItem(item) {
         <div class="preco">R$ ${item.preco.toFixed(2)}</div>
         <button class="btn-add-carrinho">+ Adicionar</button>
     `;
-
-  const btnAdicionar = card.querySelector(".btn-add-carrinho");
-  btnAdicionar.addEventListener("click", (e) => {
+  card.querySelector(".btn-add-carrinho").addEventListener("click", (e) => {
     e.stopPropagation();
     adicionarAoCarrinho(item);
   });
-
   return card;
 }
 
 function adicionarAoCarrinho(item) {
-  // Verificar se o item já está no carrinho
-  const itemExistente = state.carrinho.find((i) => i.item.nome === item.nome);
-
-  if (itemExistente) {
-    itemExistente.quantidade++;
-  } else {
-    state.carrinho.push({ item: item, quantidade: 1 });
-  }
-
+  const existing = state.carrinho.find((i) => i.item.nome === item.nome);
+  if (existing) existing.quantidade++;
+  else state.carrinho.push({ item: item, quantidade: 1 });
+  
   atualizarResumo();
-
-  // Feedback visual
+  
   const toast = document.createElement("div");
   toast.className = "toast-notification";
-  toast.textContent = `${item.nome} adicionado ao carrinho!`;
+  toast.textContent = `${item.nome} adicionado!`;
   document.body.appendChild(toast);
-
-  setTimeout(() => {
-    toast.remove();
-  }, 2000);
+  setTimeout(() => toast.remove(), 2000);
 }
 
 function removerDoCarrinho(nomeItem) {
   const index = state.carrinho.findIndex((i) => i.item.nome === nomeItem);
   if (index !== -1) {
-    if (state.carrinho[index].quantidade > 1) {
-      state.carrinho[index].quantidade--;
-    } else {
-      state.carrinho.splice(index, 1);
-    }
+    if (state.carrinho[index].quantidade > 1) state.carrinho[index].quantidade--;
+    else state.carrinho.splice(index, 1);
     atualizarResumo();
   }
 }
@@ -294,39 +245,37 @@ function renderizarPedidos() {
   }
 
   if (pedidosFiltrados.length === 0) {
-    elements.pedidosList.innerHTML =
-      '<p class="loading">Nenhum pedido encontrado.</p>';
+    elements.pedidosList.innerHTML = '<p class="loading">Nenhum pedido encontrado.</p>';
     return;
   }
 
   elements.pedidosList.innerHTML = "";
   pedidosFiltrados.reverse().forEach((pedido) => {
-    const card = criarPedidoCard(pedido);
-    elements.pedidosList.appendChild(card);
+    elements.pedidosList.appendChild(criarPedidoCard(pedido));
   });
 }
 
 function criarPedidoCard(pedido) {
   const card = document.createElement("div");
-  card.className = "pedido-card";
+  
+  // Verifica se é cancelado para mudar o estilo
+  if (pedido.status === 'CANCELADO') {
+      card.className = "pedido-card cancelado"; // Adiciona classe CSS extra
+  } else {
+      card.className = "pedido-card";
+  }
 
   const dataFormatada = new Date(pedido.data_pedido).toLocaleString("pt-BR");
 
   card.innerHTML = `
         <div class="pedido-header">
             <div class="pedido-id">Pedido #${pedido.id}</div>
-            <span class="pedido-status status-${pedido.status}">${
-    pedido.status
-  }</span>
+            <span class="pedido-status status-${pedido.status}">${pedido.status}</span>
         </div>
         <div class="pedido-info">
             <p><strong>Cliente:</strong> ${pedido.cliente}</p>
             <p><strong>Item:</strong> ${pedido.item}</p>
-            ${
-              pedido.observacao
-                ? `<p><strong>Obs:</strong> ${pedido.observacao}</p>`
-                : ""
-            }
+            ${pedido.observacao ? `<p><strong>Obs:</strong> ${pedido.observacao}</p>` : ""}
             <p><strong>Valor:</strong> R$ ${pedido.valor.toFixed(2)}</p>
             <p><strong>Data:</strong> ${dataFormatada}</p>
         </div>
@@ -335,7 +284,7 @@ function criarPedidoCard(pedido) {
   return card;
 }
 
-// Navegação
+// Navegação e Utilitários
 function mostrarNovoPedido() {
   elements.sectionNovoPedido.style.display = "block";
   elements.sectionPedidos.style.display = "none";
@@ -344,10 +293,9 @@ function mostrarNovoPedido() {
 function mostrarPedidos() {
   elements.sectionNovoPedido.style.display = "none";
   elements.sectionPedidos.style.display = "block";
-  carregarPedidos();
+  carregarPedidos(); // Recarrega sempre que abre a tela
 }
 
-// Utilitários
 function atualizarResumo() {
   const cliente = elements.inputCliente.value.trim();
   const observacao = elements.inputObservacao.value.trim();
@@ -356,31 +304,18 @@ function atualizarResumo() {
     elements.pedidoResumo.style.display = "block";
     elements.resumoCliente.textContent = cliente || "—";
 
-    // Renderizar itens do carrinho
-    const itensHtml = state.carrinho
-      .map((itemCarrinho) => {
-        const subtotal = itemCarrinho.item.preco * itemCarrinho.quantidade;
-        return `
+    const itensHtml = state.carrinho.map((ic) => `
         <div class="carrinho-item">
-          <span class="carrinho-item-nome">${itemCarrinho.quantidade}x ${
-          itemCarrinho.item.nome
-        }</span>
-          <span class="carrinho-item-preco">R$ ${subtotal.toFixed(2)}</span>
-          <button class="btn-remover" onclick="removerDoCarrinho('${
-            itemCarrinho.item.nome
-          }')">🗑️</button>
+          <span class="carrinho-item-nome">${ic.quantidade}x ${ic.item.nome}</span>
+          <span class="carrinho-item-preco">R$ ${(ic.item.preco * ic.quantidade).toFixed(2)}</span>
+          <button class="btn-remover" onclick="removerDoCarrinho('${ic.item.nome}')">🗑️</button>
         </div>
-      `;
-      })
-      .join("");
+      `).join("");
 
-    const valorTotal = state.carrinho.reduce(
-      (sum, ic) => sum + ic.item.preco * ic.quantidade,
-      0
-    );
+    const total = state.carrinho.reduce((sum, ic) => sum + ic.item.preco * ic.quantidade, 0);
 
     elements.resumoItem.innerHTML = itensHtml;
-    elements.resumoValor.textContent = `R$ ${valorTotal.toFixed(2)}`;
+    elements.resumoValor.textContent = `R$ ${total.toFixed(2)}`;
     elements.resumoObs.textContent = observacao || "Nenhuma";
     elements.btnFazerPedido.disabled = !cliente;
   } else {
@@ -389,7 +324,6 @@ function atualizarResumo() {
   }
 }
 
-// Tornar função global para ser chamada pelo HTML inline
 window.removerDoCarrinho = removerDoCarrinho;
 
 function limparFormulario() {
@@ -414,9 +348,6 @@ function fecharModal(modal) {
   modal.style.display = "none";
 }
 
-// Fechar modal clicando fora
 window.onclick = function (event) {
-  if (event.target.classList.contains("modal")) {
-    fecharModal(event.target);
-  }
+  if (event.target.classList.contains("modal")) fecharModal(event.target);
 };

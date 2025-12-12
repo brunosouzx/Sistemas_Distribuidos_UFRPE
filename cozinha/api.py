@@ -11,7 +11,13 @@ db.init_db()
 
 @app.route('/fila', methods=['GET'])
 def listar_fila():
-    """Lista pedidos na fila de preparação."""
+    """
+    Lista pedidos na fila de preparação.
+    ---
+    responses:
+      200:
+        description: Fila de pedidos
+    """
     try:
         fila = db.listar_fila_preparo()
         recebidos = [p for p in fila if p['status'] == 'RECEBIDO']
@@ -28,7 +34,19 @@ def listar_fila():
 
 @app.route('/pedidos/<status>', methods=['GET'])
 def listar_por_status(status):
-    """Lista pedidos por status."""
+    """
+    Lista pedidos por status.
+    ---
+    parameters:
+      - name: status
+        in: path
+        type: string
+        required: true
+        enum: [RECEBIDO, PREPARANDO, PRONTO, CANCELADO]
+    responses:
+      200:
+        description: Lista de pedidos
+    """
     try:
         status_upper = status.upper()
         # IMPORTANTE: 'CANCELADO' deve estar nesta lista para o filtro funcionar
@@ -46,7 +64,20 @@ def listar_por_status(status):
 
 @app.route('/pedidos/<int:cozinha_id>', methods=['GET'])
 def buscar_pedido(cozinha_id):
-    """Busca um pedido específico."""
+    """
+    Busca um pedido específico.
+    ---
+    parameters:
+      - name: cozinha_id
+        in: path
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Dados do pedido
+      404:
+        description: Pedido não encontrado
+    """
     try:
         pedido = db.buscar_pedido(cozinha_id)
         if pedido:
@@ -58,7 +89,23 @@ def buscar_pedido(cozinha_id):
 
 @app.route('/pedidos/<int:cozinha_id>/iniciar', methods=['PUT'])
 def iniciar_preparo_endpoint(cozinha_id):
-    """Inicia o preparo de um pedido."""
+    """
+    Inicia o preparo de um pedido.
+    ---
+    parameters:
+      - name: cozinha_id
+        in: path
+        type: integer
+        required: true
+        description: ID do pedido na cozinha
+    responses:
+      200:
+        description: Preparo iniciado
+      404:
+        description: Pedido não encontrado
+      400:
+        description: Pedido já está em preparo
+    """
     try:
         # Importação dentro da função para evitar erro circular
         from app import publicar_pedido_preparando
@@ -89,7 +136,23 @@ def iniciar_preparo_endpoint(cozinha_id):
 
 @app.route('/pedidos/<int:cozinha_id>/finalizar', methods=['PUT'])
 def finalizar_pedido_endpoint(cozinha_id):
-    """Finaliza o pedido e calcula tempo."""
+    """
+    Finaliza o preparo de um pedido (cálculo automático de tempo).
+    ---
+    parameters:
+      - name: cozinha_id
+        in: path
+        type: integer
+        required: true
+        description: ID do pedido na cozinha
+    responses:
+      200:
+        description: Pedido finalizado e mensagem publicada
+      404:
+        description: Pedido não encontrado
+      400:
+        description: Pedido não está em preparo
+    """
     try:
         # Importação dentro da função para evitar erro circular
         from app import publicar_pedido_pronto
@@ -118,10 +181,32 @@ def finalizar_pedido_endpoint(cozinha_id):
     except Exception as e:
         return jsonify({"erro": str(e)}), 500
 
-# --- ROTA QUE ESTAVA DANDO 404 ---
 @app.route('/pedidos/<int:cozinha_id>/cancelar', methods=['PUT'])
 def cancelar_pedido_endpoint(cozinha_id):
-    """Cancela um pedido e notifica via RabbitMQ."""
+    """
+    Cancela um pedido e notifica via RabbitMQ.
+    ---
+    parameters:
+      - name: cozinha_id
+        in: path
+        type: integer
+        required: true
+        description: ID do pedido na cozinha
+      - name: body
+        in: body
+        required: false
+        schema:
+          type: object
+          properties:
+            motivo:
+              type: string
+              example: "Ingredientes insuficientes"
+    responses:
+      200:
+        description: Pedido cancelado
+      404:
+        description: Pedido não encontrado
+    """
     try:
         # Importação dentro da função para evitar erro circular
         from app import publicar_status_pedido
@@ -156,7 +241,13 @@ def cancelar_pedido_endpoint(cozinha_id):
 
 @app.route('/estatisticas', methods=['GET'])
 def estatisticas():
-    """Retorna estatísticas da cozinha."""
+    """
+    Retorna estatísticas da cozinha.
+    ---
+    responses:
+      200:
+        description: Estatísticas de operação
+    """
     try:
         stats = db.estatisticas_cozinha()
         return jsonify(stats), 200
@@ -165,6 +256,13 @@ def estatisticas():
 
 @app.route('/health', methods=['GET'])
 def health_check():
+    """
+    Verifica o status do serviço.
+    ---
+    responses:
+      200:
+        description: Serviço operacional
+    """
     return jsonify({"status": "online", "servico": "cozinha_api"}), 200
 
 @app.route('/')
