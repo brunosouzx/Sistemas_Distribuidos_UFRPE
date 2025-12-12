@@ -633,7 +633,7 @@ body {
     }
 }
 
-/* Botão pequeno para a tabela de estoque (NOVO) */
+/* Botão pequeno para a tabela de estoque */
 .btn-sm {
     padding: 5px 12px;
     border: none;
@@ -649,4 +649,31 @@ body {
 .btn-sm:hover {
     transform: translateY(-1px);
     box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+}
+
+/* NOVOS ESTILOS PARA CANCELAMENTO */
+
+/* Estilo para o Badge de status CANCELADO */
+.status-badge-CANCELADO {
+    background: #fadbd8;
+    color: #78281f;
+    border: 1px solid #e74c3c;
+}
+
+/* Estilo específico para o Card Cancelado */
+.pedido-card.status-CANCELADO {
+    border-color: #e74c3c;
+    background-color: #fdfefe;
+    opacity: 0.8; /* Levemente transparente para indicar inativo */
+}
+
+.pedido-card.status-CANCELADO::before {
+    background: #e74c3c; /* Faixa vermelha no topo */
+}
+
+/* Ajuste no botão de filtro de cancelados ao passar o mouse */
+.filter-btn[data-status="CANCELADO"]:hover,
+.filter-btn[data-status="CANCELADO"].active {
+    background: #e74c3c !important;
+    color: white !important;
 }

@@ -28,6 +28,10 @@
                     <span class="stat-number" id="statProntos">0</span>
                     <span class="stat-label">Prontos</span>
                 </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #e74c3c, #c0392b);">
+                    <span class="stat-number" id="statCancelados">0</span>
+                    <span class="stat-label">Cancelados</span>
+                </div>
             </div>
         </header>
 
@@ -37,6 +41,8 @@
                 <button class="filter-btn" data-status="RECEBIDO">🔔 Recebidos</button>
                 <button class="filter-btn" data-status="PREPARANDO">🍳 Preparando</button>
                 <button class="filter-btn" data-status="PRONTO">✅ Prontos</button>
+                <button class="filter-btn" data-status="CANCELADO" style="color: #e74c3c; border-color: #e74c3c;">🚫 Cancelados</button>
+                
                 <button id="btnRefresh" class="btn-refresh">🔄 Atualizar</button>
             </div>
 
@@ -93,13 +99,33 @@
                     </p>
                 </div>
                 <div id="tempoPreparoContainer" style="display: none;">
-                    <label for="inputTempoPreparo">Tempo de preparação (minutos):</label>
-                    <input type="number" id="inputTempoPreparo" min="1" max="60" value="8">
-                </div>
+                    </div>
             </div>
             <div class="modal-footer">
                 <button id="btnCancelar" class="btn btn-secondary">Cancelar</button>
                 <button id="btnConfirmar" class="btn btn-primary">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalCancelar" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="fecharModalCancelar()">&times;</span>
+            <h3 style="background-color: var(--danger-color);">🚫 Cancelar Pedido</h3>
+            <div class="modal-body">
+                <p>Tem certeza que deseja cancelar o pedido <strong id="cancelarPedidoId"></strong>?</p>
+                
+                <label for="inputMotivoCancelamento">Selecione o motivo:</label>
+                <select id="inputMotivoCancelamento" style="width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px;">
+                    <option value="Ingredientes insuficientes">⚠️ Falta de Ingredientes (Estoque)</option>
+                    <option value="Erro no pedido">❌ Erro no Pedido</option>
+                    <option value="Cliente desistiu">👤 Cliente Desistiu</option>
+                    <option value="Outro">📝 Outro</option>
+                </select>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="fecharModalCancelar()">Voltar</button>
+                <button class="btn btn-warning" onclick="confirmarCancelamento()">Confirmar Cancelamento</button>
             </div>
         </div>
     </div>

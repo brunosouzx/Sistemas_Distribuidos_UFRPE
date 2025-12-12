@@ -1,10 +1,30 @@
 import json
 import time
-
 import database as db
 import pika
 
 db.init_db()
+
+def publicar_erro_estoque(channel, pedido_id, mensagem_erro):
+    """
+    Publica uma mensagem de erro na exchange de pedidos prontos/atualizações.
+    Isso permite que Caixa ou Cozinha saibam que houve falha.
+    """
+    try:
+        msg = {
+            'pedido_caixa_id': pedido_id,
+            'status': 'ERRO_ESTOQUE',
+            'erro': mensagem_erro
+        }
+        # Usa o mesmo exchange que a cozinha/caixa escutam para atualizações
+        channel.basic_publish(
+            exchange='pedidos_prontos_exchange', 
+            routing_key='',
+            body=json.dumps(msg)
+        )
+        print(f"[ESTOQUE] Aviso de erro enviado: Pedido #{pedido_id} - {mensagem_erro}", flush=True)
+    except Exception as e:
+        print(f"[ERRO] Falha ao notificar erro: {e}", flush=True)
 
 
 def callback(ch, method, properties, body):
@@ -26,7 +46,11 @@ def callback(ch, method, properties, body):
 
         if not disponivel:
             print(f"[ESTOQUE] ✗ ALERTA: {mensagem}", flush=True)
-            # Confirmar mesmo sem estoque para não bloquear a fila
+            
+            # NOVO: Notificar o sistema sobre a falha
+            publicar_erro_estoque(ch, pedido_id, mensagem)
+            
+            # Confirmar (ack) para tirar da fila, pois não adianta tentar de novo agora
             ch.basic_ack(delivery_tag=method.delivery_tag)
             return
 
@@ -51,12 +75,10 @@ def callback(ch, method, properties, body):
 
     except ValueError as e:
         print(f"[ESTOQUE] ✗ Erro de validação: {e}", flush=True)
-        # Erro de validação: confirmar para não reprocessar
         ch.basic_ack(delivery_tag=method.delivery_tag)
     except Exception as e:
         print(f"[ERRO] Erro ao processar no estoque: {e}", flush=True)
 
-        # Limitar tentativas: após 3 falhas, enviar para DLQ
         if retry_count >= 2:
             print(f"[ESTOQUE] ⚠ Limite de tentativas atingido "
                   f" ({retry_count + 1}). Enviando para DLQ...", flush=True)
@@ -78,31 +100,33 @@ def iniciar_consumidor():
                 pika.ConnectionParameters('rabbitmq'))
             channel = connection.channel()
 
-            # Declarar Dead Letter Exchange
+            # Declarar Exchanges e Filas (garantir topologia)
             channel.exchange_declare(
                 exchange='pedidos_dlx',
                 exchange_type='fanout',
                 durable=True
             )
+            
+            # Importante: Declarar o exchange de resposta para poder publicar erros
+            channel.exchange_declare(
+                exchange='pedidos_prontos_exchange', 
+                exchange_type='fanout'
+            )
 
-            # Declarar Dead Letter Queue para estoque
             channel.queue_declare(
                 queue='pedidos_dlq_estoque',
                 durable=True
             )
 
-            # Bind DLQ ao DLX
             channel.queue_bind(
                 exchange='pedidos_dlx',
                 queue='pedidos_dlq_estoque'
             )
 
-            # Declarar exchange principal
             channel.exchange_declare(
                 exchange='pedidos_exchange', exchange_type='fanout'
             )
 
-            # Criar fila com DLX
             result = channel.queue_declare(
                 queue='',
                 exclusive=True,
@@ -114,9 +138,7 @@ def iniciar_consumidor():
             channel.queue_bind(exchange='pedidos_exchange', queue=queue_name)
 
             print('[ESTOQUE] ✓ Conectado! Monitorando pedidos...', flush=True)
-            print('[ESTOQUE] DLQ configurada: pedidos_dlq_estoque', flush=True)
 
-            # Processar uma mensagem por vez para garantir confiabilidade
             channel.basic_qos(prefetch_count=1)
             channel.basic_consume(
                 queue=queue_name, on_message_callback=callback, auto_ack=False
