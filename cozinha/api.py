@@ -9,6 +9,7 @@ swagger = Swagger(app)
 
 db.init_db()
 
+
 @app.route('/fila', methods=['GET'])
 def listar_fila():
     """
@@ -31,6 +32,7 @@ def listar_fila():
         }), 200
     except Exception as e:
         return jsonify({"erro": str(e)}), 500
+
 
 @app.route('/pedidos/<status>', methods=['GET'])
 def listar_por_status(status):
@@ -62,6 +64,7 @@ def listar_por_status(status):
     except Exception as e:
         return jsonify({"erro": str(e)}), 500
 
+
 @app.route('/pedidos/<int:cozinha_id>', methods=['GET'])
 def buscar_pedido(cozinha_id):
     """
@@ -87,6 +90,7 @@ def buscar_pedido(cozinha_id):
     except Exception as e:
         return jsonify({"erro": str(e)}), 500
 
+
 @app.route('/pedidos/<int:cozinha_id>/iniciar', methods=['PUT'])
 def iniciar_preparo_endpoint(cozinha_id):
     """
@@ -109,7 +113,7 @@ def iniciar_preparo_endpoint(cozinha_id):
     try:
         # Importação dentro da função para evitar erro circular
         from app import publicar_pedido_preparando
-        
+
         pedido = db.buscar_pedido(cozinha_id)
         if not pedido:
             return jsonify({"erro": "Pedido não encontrado"}), 404
@@ -134,6 +138,7 @@ def iniciar_preparo_endpoint(cozinha_id):
     except Exception as e:
         return jsonify({"erro": str(e)}), 500
 
+
 @app.route('/pedidos/<int:cozinha_id>/finalizar', methods=['PUT'])
 def finalizar_pedido_endpoint(cozinha_id):
     """
@@ -156,7 +161,7 @@ def finalizar_pedido_endpoint(cozinha_id):
     try:
         # Importação dentro da função para evitar erro circular
         from app import publicar_pedido_pronto
-        
+
         pedido = db.buscar_pedido(cozinha_id)
         if not pedido:
             return jsonify({"erro": "Pedido não encontrado"}), 404
@@ -180,6 +185,7 @@ def finalizar_pedido_endpoint(cozinha_id):
         }), 200
     except Exception as e:
         return jsonify({"erro": str(e)}), 500
+
 
 @app.route('/pedidos/<int:cozinha_id>/cancelar', methods=['PUT'])
 def cancelar_pedido_endpoint(cozinha_id):
@@ -239,6 +245,7 @@ def cancelar_pedido_endpoint(cozinha_id):
         print(f"Erro ao cancelar: {e}")
         return jsonify({"erro": str(e)}), 500
 
+
 @app.route('/estatisticas', methods=['GET'])
 def estatisticas():
     """
@@ -254,6 +261,7 @@ def estatisticas():
     except Exception as e:
         return jsonify({"erro": str(e)}), 500
 
+
 @app.route('/health', methods=['GET'])
 def health_check():
     """
@@ -265,13 +273,16 @@ def health_check():
     """
     return jsonify({"status": "online", "servico": "cozinha_api"}), 200
 
+
 @app.route('/')
 def index():
     return send_from_directory(app.static_folder, 'index.html')
 
+
 @app.route('/static/<path:filename>')
 def serve_static(filename):
     return send_from_directory(app.static_folder, filename)
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5001)
