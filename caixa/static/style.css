@@ -381,6 +381,19 @@ body {
     background-color: #fdfefe;
 }
 
+/* --- ESTILOS PARA ERRO DE ESTOQUE --- */
+
+.status-ERRO_ESTOQUE {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #f39c12;
+}
+
+.pedido-card.erro-estoque {
+    border-color: #f39c12;
+    background: #fffbf0;
+}
+
 /* Comportamento do botão de filtro cancelado */
 .filter-btn[data-status="CANCELADO"]:hover,
 .filter-btn[data-status="CANCELADO"].active {

@@ -78,6 +78,11 @@ def init_db():
                 ('ovo', 50, 'unidade', 15),
                 ('alface', 40, 'folha', 10),
                 ('tomate', 40, 'fatia', 10),
+                ('coca-cola', 50, 'unidade', 10),
+                ('guarana', 50, 'unidade', 10),
+                ('suco_laranja', 30, 'unidade', 8),
+                ('agua_mineral', 60, 'unidade', 15),
+                ('cerveja', 40, 'unidade', 10),
             ]
             cursor.executemany('''
                 INSERT INTO ingredientes (
@@ -124,6 +129,13 @@ def init_db():
                 ('X-Tudo', 'pao', 1), ('X-Tudo', 'carne', 1),
                 ('X-Tudo', 'queijo', 1), ('X-Tudo', 'presunto', 1),
                 ('X-Tudo', 'bacon', 1), ('X-Tudo', 'ovo', 1),
+
+                # Bebidas (cada bebida usa 1 unidade dela mesma)
+                ('Coca-Cola', 'coca-cola', 1),
+                ('Guaraná', 'guarana', 1),
+                ('Suco de Laranja', 'suco_laranja', 1),
+                ('Água Mineral', 'agua_mineral', 1),
+                ('Cerveja', 'cerveja', 1),
             ]
             cursor.executemany('''
                 INSERT INTO receitas (

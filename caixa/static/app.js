@@ -142,7 +142,9 @@ async function fazerPedido() {
     if (pedidosCriados.length > 0) {
       const valorTotal = pedidosCriados.reduce((sum, p) => sum + p.valor, 0);
       const idsPedidos = pedidosCriados.map((p) => `#${p.id}`).join(", ");
-      let mensagem = `Pedidos ${idsPedidos} realizados! Total: R$ ${valorTotal.toFixed(2)}`;
+      let mensagem = `Pedidos ${idsPedidos} realizados! Total: R$ ${valorTotal.toFixed(
+        2
+      )}`;
       if (erros.length > 0) mensagem += `\n\nFalhas: ${erros.length}`;
       mostrarSucesso(mensagem);
     } else {
@@ -183,7 +185,9 @@ function renderizarCardapio() {
     title.style.gridColumn = "1 / -1";
     title.style.marginTop = "10px";
     elements.cardapioList.appendChild(title);
-    lanches.forEach((item) => elements.cardapioList.appendChild(criarCardItem(item)));
+    lanches.forEach((item) =>
+      elements.cardapioList.appendChild(criarCardItem(item))
+    );
   }
 
   if (bebidas.length > 0) {
@@ -192,7 +196,9 @@ function renderizarCardapio() {
     title.style.gridColumn = "1 / -1";
     title.style.marginTop = "20px";
     elements.cardapioList.appendChild(title);
-    bebidas.forEach((item) => elements.cardapioList.appendChild(criarCardItem(item)));
+    bebidas.forEach((item) =>
+      elements.cardapioList.appendChild(criarCardItem(item))
+    );
   }
 }
 
@@ -216,9 +222,9 @@ function adicionarAoCarrinho(item) {
   const existing = state.carrinho.find((i) => i.item.nome === item.nome);
   if (existing) existing.quantidade++;
   else state.carrinho.push({ item: item, quantidade: 1 });
-  
+
   atualizarResumo();
-  
+
   const toast = document.createElement("div");
   toast.className = "toast-notification";
   toast.textContent = `${item.nome} adicionado!`;
@@ -229,7 +235,8 @@ function adicionarAoCarrinho(item) {
 function removerDoCarrinho(nomeItem) {
   const index = state.carrinho.findIndex((i) => i.item.nome === nomeItem);
   if (index !== -1) {
-    if (state.carrinho[index].quantidade > 1) state.carrinho[index].quantidade--;
+    if (state.carrinho[index].quantidade > 1)
+      state.carrinho[index].quantidade--;
     else state.carrinho.splice(index, 1);
     atualizarResumo();
   }
@@ -245,7 +252,8 @@ function renderizarPedidos() {
   }
 
   if (pedidosFiltrados.length === 0) {
-    elements.pedidosList.innerHTML = '<p class="loading">Nenhum pedido encontrado.</p>';
+    elements.pedidosList.innerHTML =
+      '<p class="loading">Nenhum pedido encontrado.</p>';
     return;
   }
 
@@ -257,12 +265,14 @@ function renderizarPedidos() {
 
 function criarPedidoCard(pedido) {
   const card = document.createElement("div");
-  
-  // Verifica se é cancelado para mudar o estilo
-  if (pedido.status === 'CANCELADO') {
-      card.className = "pedido-card cancelado"; // Adiciona classe CSS extra
+
+  // Verifica se é cancelado ou erro de estoque para mudar o estilo
+  if (pedido.status === "CANCELADO") {
+    card.className = "pedido-card cancelado"; // Adiciona classe CSS extra
+  } else if (pedido.status === "ERRO_ESTOQUE") {
+    card.className = "pedido-card erro-estoque";
   } else {
-      card.className = "pedido-card";
+    card.className = "pedido-card";
   }
 
   const dataFormatada = new Date(pedido.data_pedido).toLocaleString("pt-BR");
@@ -270,12 +280,18 @@ function criarPedidoCard(pedido) {
   card.innerHTML = `
         <div class="pedido-header">
             <div class="pedido-id">Pedido #${pedido.id}</div>
-            <span class="pedido-status status-${pedido.status}">${pedido.status}</span>
+            <span class="pedido-status status-${pedido.status}">${
+    pedido.status
+  }</span>
         </div>
         <div class="pedido-info">
             <p><strong>Cliente:</strong> ${pedido.cliente}</p>
             <p><strong>Item:</strong> ${pedido.item}</p>
-            ${pedido.observacao ? `<p><strong>Obs:</strong> ${pedido.observacao}</p>` : ""}
+            ${
+              pedido.observacao
+                ? `<p><strong>Obs:</strong> ${pedido.observacao}</p>`
+                : ""
+            }
             <p><strong>Valor:</strong> R$ ${pedido.valor.toFixed(2)}</p>
             <p><strong>Data:</strong> ${dataFormatada}</p>
         </div>
@@ -304,15 +320,28 @@ function atualizarResumo() {
     elements.pedidoResumo.style.display = "block";
     elements.resumoCliente.textContent = cliente || "—";
 
-    const itensHtml = state.carrinho.map((ic) => `
+    const itensHtml = state.carrinho
+      .map(
+        (ic) => `
         <div class="carrinho-item">
-          <span class="carrinho-item-nome">${ic.quantidade}x ${ic.item.nome}</span>
-          <span class="carrinho-item-preco">R$ ${(ic.item.preco * ic.quantidade).toFixed(2)}</span>
-          <button class="btn-remover" onclick="removerDoCarrinho('${ic.item.nome}')">🗑️</button>
+          <span class="carrinho-item-nome">${ic.quantidade}x ${
+          ic.item.nome
+        }</span>
+          <span class="carrinho-item-preco">R$ ${(
+            ic.item.preco * ic.quantidade
+          ).toFixed(2)}</span>
+          <button class="btn-remover" onclick="removerDoCarrinho('${
+            ic.item.nome
+          }')">🗑️</button>
         </div>
-      `).join("");
+      `
+      )
+      .join("");
 
-    const total = state.carrinho.reduce((sum, ic) => sum + ic.item.preco * ic.quantidade, 0);
+    const total = state.carrinho.reduce(
+      (sum, ic) => sum + ic.item.preco * ic.quantidade,
+      0
+    );
 
     elements.resumoItem.innerHTML = itensHtml;
     elements.resumoValor.textContent = `R$ ${total.toFixed(2)}`;
