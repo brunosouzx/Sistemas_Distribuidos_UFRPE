@@ -1,9 +1,11 @@
 import json
 import time
+
 import database as db
 import pika
 
 db.init_db()
+
 
 def publicar_erro_estoque(channel, pedido_id, mensagem_erro):
     """
@@ -18,11 +20,12 @@ def publicar_erro_estoque(channel, pedido_id, mensagem_erro):
         }
         # Usa o mesmo exchange que a cozinha/caixa escutam para atualizações
         channel.basic_publish(
-            exchange='pedidos_prontos_exchange', 
+            exchange='pedidos_prontos_exchange',
             routing_key='',
             body=json.dumps(msg)
         )
-        print(f"[ESTOQUE] Aviso de erro enviado: Pedido #{pedido_id} - {mensagem_erro}", flush=True)
+        print(
+            f"[ESTOQUE] Aviso de erro enviado: Pedido #{pedido_id} - {mensagem_erro}", flush=True)
     except Exception as e:
         print(f"[ERRO] Falha ao notificar erro: {e}", flush=True)
 
@@ -46,11 +49,9 @@ def callback(ch, method, properties, body):
 
         if not disponivel:
             print(f"[ESTOQUE] ✗ ALERTA: {mensagem}", flush=True)
-            
-            # NOVO: Notificar o sistema sobre a falha
+
             publicar_erro_estoque(ch, pedido_id, mensagem)
-            
-            # Confirmar (ack) para tirar da fila, pois não adianta tentar de novo agora
+
             ch.basic_ack(delivery_tag=method.delivery_tag)
             return
 
@@ -106,10 +107,9 @@ def iniciar_consumidor():
                 exchange_type='fanout',
                 durable=True
             )
-            
-            # Importante: Declarar o exchange de resposta para poder publicar erros
+
             channel.exchange_declare(
-                exchange='pedidos_prontos_exchange', 
+                exchange='pedidos_prontos_exchange',
                 exchange_type='fanout'
             )
 
@@ -127,14 +127,15 @@ def iniciar_consumidor():
                 exchange='pedidos_exchange', exchange_type='fanout'
             )
 
-            result = channel.queue_declare(
-                queue='',
-                exclusive=True,
+            channel.queue_declare(
+                queue='pedidos_estoque_app',
+                exclusive=False,
+                durable=True,
                 arguments={
                     'x-dead-letter-exchange': 'pedidos_dlx',
                 }
             )
-            queue_name = result.method.queue
+            queue_name = 'pedidos_estoque_app'
             channel.queue_bind(exchange='pedidos_exchange', queue=queue_name)
 
             print('[ESTOQUE] ✓ Conectado! Monitorando pedidos...', flush=True)

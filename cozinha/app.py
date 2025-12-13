@@ -128,14 +128,15 @@ def iniciar_consumidor():
                 exchange='pedidos_exchange', exchange_type='fanout')
 
             # Criar fila com DLX
-            result = channel.queue_declare(
-                queue='',
-                exclusive=True,
+            channel.queue_declare(
+                queue='pedidos_cozinha_app',
+                exclusive=False,
+                durable=True,
                 arguments={
                     'x-dead-letter-exchange': 'pedidos_dlx',
                 }
             )
-            queue_name = result.method.queue
+            queue_name = 'pedidos_cozinha_app'
 
             channel.queue_bind(exchange='pedidos_exchange', queue=queue_name)
 
